@@ -1,1 +1,1 @@
-![Image Alt text](Screenshot/Front_image.png "Optional title")
+![Image Alt text](Screenshot/with_grass.png "Optional title")

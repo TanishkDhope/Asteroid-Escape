@@ -3,10 +3,20 @@ from random import randint
 
 pygame.init()
 
+def read_high_score():
+    try:
+        with open('highScore.txt', 'r') as file:
+            score=file.read().strip()
+            return int(score)
+    except (FileNotFoundError, ValueError):
+        return 0
+    return 0
+
 pygame.display.set_caption("Asteroid Escape")
 screen=pygame.display.set_mode((640,400))
 clock=pygame.time.Clock()
 count=0
+high_score=read_high_score()
 
 #player characteristics
 player_walk1=pygame.image.load("C:\Projects\Python\Asteroid-Escape\Graphics\png\character\walk\walk0001.png").convert_alpha()
@@ -41,6 +51,22 @@ fly_surf=fly_frame[fly_index]
 
 obstacle_list=[]
 
+#Non-Enemy Objects
+grass_surf_1=pygame.image.load("C:\Projects\Python\Asteroid-Escape\Graphics\png\grass.png").convert_alpha()
+grass_surf_1=pygame.transform.scale(grass_surf_1, (25,30))
+grass_surf_2=pygame.image.load("C:\Projects\Python\Asteroid-Escape\Graphics\png\Bush.png").convert_alpha()
+# grass_surf_2=pygame.transform.scale(grass_surf_2, (50,13))
+
+cloud_surf_1=pygame.image.load("C:\Projects\Python\Asteroid-Escape\Graphics\png\cloud_1.png").convert_alpha()
+cloud_surf_1=pygame.transform.scale(cloud_surf_1, (63,33))
+cloud_surf_2=pygame.image.load("C:\Projects\Python\Asteroid-Escape\Graphics\png\cloud_2.png").convert_alpha()
+cloud_surf_2=pygame.transform.scale(cloud_surf_2, (63,33))
+cloud_surf_3=pygame.image.load("C:\Projects\Python\Asteroid-Escape\Graphics\png\cloud_3.png").convert_alpha()
+cloud_surf_3=pygame.transform.scale(cloud_surf_3, (63,33))
+
+cloud_list=[]
+grass_list=[]
+
 #Surface Characteristics
 background_surface=pygame.image.load("C:\Projects\Python\Asteroid-Escape\Graphics\Background.jpg").convert_alpha()
 background_surface=pygame.transform.scale(background_surface,(640,400))
@@ -73,9 +99,14 @@ pygame.time.set_timer(obstacle_timer, 2000)          #two args (event_to_trigger
 slime_animation_timer=pygame.USEREVENT+ 2
 pygame.time.set_timer(slime_animation_timer, 500)
 
-
 fly_animation_timer=pygame.USEREVENT+ 3
 pygame.time.set_timer(fly_animation_timer, 200)
+
+cloud_timer=pygame.USEREVENT + 4
+pygame.time.set_timer(cloud_timer, 3000)
+
+grass_timer=pygame.USEREVENT + 5
+pygame.time.set_timer(grass_timer, 2500)
 
 running=True
 game_active=True
@@ -87,6 +118,16 @@ def display_score():
     text_surface=text_font.render(f'{count}', False, (255,255,255))
     text_rect=text_surface.get_rect(center=(320,200))
     screen.blit(text_surface, text_rect)
+
+#display High Score
+def display_high():
+    global high_score
+    if count>=high_score:
+        high_score=count
+    high_score_surf=score_font.render(f'HI {high_score}', False, (255,255,255))
+    high_score_rect=high_score_surf.get_rect(center=(60,30))
+    screen.blit(high_score_surf, high_score_rect)
+    
 
 #obstacle logic
 def obstacle_movement(obstacle_list):
@@ -106,6 +147,41 @@ def obstacle_movement(obstacle_list):
     else:
         return []
 
+#cloud movement
+def cloud_movement(cloud_list):
+    if cloud_list:
+        for cloud in cloud_list:
+            if not game_pause:
+                cloud.x-=1.8
+            if cloud.bottom==40:
+                screen.blit(cloud_surf_1, cloud)
+            elif cloud.bottom==50:
+                screen.blit(cloud_surf_2, cloud)
+            else:
+                screen.blit(cloud_surf_2, cloud)
+                
+
+        cloud_list=[cloud for cloud in cloud_list if cloud.right>-10]
+        return cloud_list
+    else:
+        return []
+
+
+#grass movement
+def grass_movement(grass_list):
+    if grass_list:
+        for grass in grass_list:
+            if not game_pause:
+                grass[1].x-=2
+            if grass[0]==0:
+                screen.blit(grass_surf_1, grass[1])
+            else:
+                screen.blit(grass_surf_2, grass[1])
+
+        grass_list=[grass for grass in grass_list if grass[1].right>-10]
+        return grass_list
+    else:
+        return []
 
 #collision logic
 def check_collision(obstacle_list):
@@ -136,6 +212,10 @@ def player_animation():
             player_index=0
         player_surf=player_walk[int(player_index)]
 
+def save_high_score():
+    with open('highScore.txt','w') as file:
+        file.write(str(high_score))
+
 
 
 while running:
@@ -163,6 +243,23 @@ while running:
                 else:
                     obstacle_list.append(fly_surf.get_rect(center=(randint(900,1100),150)))
 
+            if event.type==cloud_timer:
+                rand=randint(0,3)
+                if rand==0:
+                    cloud_list.append(cloud_surf_1.get_rect(midbottom=(randint(600,800),40)))   
+                elif rand==1:
+                    cloud_list.append(cloud_surf_2.get_rect(midbottom=(randint(600,800),50))) 
+                else:
+                    cloud_list.append(cloud_surf_3.get_rect(midbottom=(randint(600,800),80))) 
+
+            if event.type==grass_timer:
+                if randint(0,2):
+                    grass_list.append([0,grass_surf_1.get_rect(midbottom=(randint(800,1000),310))])   
+                else:
+                    grass_list.append([1,grass_surf_2.get_rect(midbottom=(randint(800,1000),310))]) 
+ 
+    
+
             if event.type==slime_animation_timer:
                 if slime_index==0: slime_index=1
                 else: slime_index=0
@@ -172,13 +269,6 @@ while running:
                 if fly_index==0: fly_index=1
                 else: fly_index=0
                 fly_surf=fly_frame[fly_index]
-            
-
-        
-                
-            
-
-    
                 
     if game_active:
 
@@ -193,25 +283,31 @@ while running:
 
 
         screen.blit(background_surface, (0,0))
+        cloud_list=cloud_movement(cloud_list)
+        grass_list=grass_movement(grass_list)
+
         screen.blit(ground_surface, ground_surface_rect)
         screen.blit(player_surf, player_rect)
         obstacle_list=obstacle_movement(obstacle_list)
-
-        # if player_rect.left>=slime_rect.right :
-        #     count+=1
+  
         count+=calc_score(obstacle_list)
 
         game_active,obstacle_list=check_collision(obstacle_list)
         display_score()
+        display_high()
 
 
     else:
         screen.fill("#467599")
+        save_high_score()
         screen.blit(name_surface, name_surface_rect)
         screen.blit(restart_surface, restart_surface_rect)
         screen.blit(player_end_surface, player_end_rect)
-        text_surface=score_font.render(f'Score: {count}', False, (255,255,255))
+        text_surface=score_font.render(f'Score {count}', False, (255,255,255))
         text_rect=text_surface.get_rect(center=(530,30))
+        high_score_surf=score_font.render(f'HI {high_score}', False, (255,255,255))
+        high_score_rect=high_score_surf.get_rect(center=(100,30))
+        screen.blit(high_score_surf, high_score_rect)
         screen.blit(text_surface, text_rect)
 
         
