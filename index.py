@@ -9,14 +9,35 @@ clock=pygame.time.Clock()
 count=0
 
 #player characteristics
-player_surface=pygame.image.load("C:\Projects\Python\Asteroid-Escape\Graphics\png\character\walk\walk0001.png").convert_alpha()
-player_rect=player_surface.get_rect(midbottom=(100,310))
-
+player_walk1=pygame.image.load("C:\Projects\Python\Asteroid-Escape\Graphics\png\character\walk\walk0001.png").convert_alpha()
+player_walk2=pygame.image.load("C:\Projects\Python\Asteroid-Escape\Graphics\png\character\walk\walk0002.png").convert_alpha()
+player_walk3=pygame.image.load("C:\Projects\Python\Asteroid-Escape\Graphics\png\character\walk\walk0003.png").convert_alpha()
+player_walk4=pygame.image.load("C:\Projects\Python\Asteroid-Escape\Graphics\png\character\walk\walk0004.png").convert_alpha()
+player_walk5=pygame.image.load("C:\Projects\Python\Asteroid-Escape\Graphics\png\character\walk\walk0005.png").convert_alpha()
+player_walk6=pygame.image.load("C:\Projects\Python\Asteroid-Escape\Graphics\png\character\walk\walk0006.png").convert_alpha()
+player_walk7=pygame.image.load("C:\Projects\Python\Asteroid-Escape\Graphics\png\character\walk\walk0007.png").convert_alpha()
+player_walk8=pygame.image.load("C:\Projects\Python\Asteroid-Escape\Graphics\png\character\walk\walk0008.png").convert_alpha()
+player_walk9=pygame.image.load("C:\Projects\Python\Asteroid-Escape\Graphics\png\character\walk\walk0009.png").convert_alpha()
+player_walk10=pygame.image.load("C:\Projects\Python\Asteroid-Escape\Graphics\png\character\walk\walk0010.png").convert_alpha()
+player_walk11=pygame.image.load("C:\Projects\Python\Asteroid-Escape\Graphics\png\character\walk\walk0011.png").convert_alpha()
+player_index=0
+player_walk=[player_walk1,player_walk2,player_walk3,player_walk4,player_walk5,player_walk6,player_walk7,player_walk8,player_walk9,player_walk10]
+player_surf=player_walk[player_index]
+player_rect=player_surf.get_rect(midbottom=(100,310))
+player_jump=pygame.image.load("C:\Projects\Python\Asteroid-Escape\Graphics\png\character\jump.png").convert_alpha()
 player_gravity=0
 
 #Enemy Chaarcteristics
-slime_surface=pygame.image.load("C:\Projects\Python\Asteroid-Escape\Graphics\png\enemies\slime_walk.png").convert_alpha()
-fly_surface=pygame.image.load("C:\Projects\Python\Asteroid-Escape\Graphics\png\enemies\Fly_normal.png").convert_alpha()
+slime_index=0
+fly_index=0
+slime_frame1=pygame.image.load("C:\Projects\Python\Asteroid-Escape\Graphics\png\enemies\slime_walk.png").convert_alpha()
+slime_frame2=pygame.image.load("C:\Projects\Python\Asteroid-Escape\Graphics\png\enemies\slime_normal.png").convert_alpha()
+slime_frame=[slime_frame1,slime_frame2]
+slime_surf=slime_frame[slime_index]
+fly_frame1=pygame.image.load("C:\Projects\Python\Asteroid-Escape\Graphics\png\enemies\Fly_normal.png").convert_alpha()
+fly_frame2=pygame.image.load("C:\Projects\Python\Asteroid-Escape\Graphics\png\enemies\Fly_fly.png").convert_alpha()
+fly_frame=[fly_frame1,fly_frame2]
+fly_surf=fly_frame[fly_index]
 
 obstacle_list=[]
 
@@ -49,10 +70,17 @@ restart_surface_rect=restart_surface.get_rect(center=(320,330))
 obstacle_timer=pygame.USEREVENT + 1
 pygame.time.set_timer(obstacle_timer, 2000)          #two args (event_to_trigger, How often in miliseconds)
 
+slime_animation_timer=pygame.USEREVENT+ 2
+pygame.time.set_timer(slime_animation_timer, 500)
+
+
+fly_animation_timer=pygame.USEREVENT+ 3
+pygame.time.set_timer(fly_animation_timer, 200)
 
 running=True
 game_active=True
 game_pause=False
+alternate=True
 
 #display score logic
 def display_score():
@@ -67,9 +95,9 @@ def obstacle_movement(obstacle_list):
             if not game_pause:
                 obstacle_rect.x-=4
             if obstacle_rect.bottom==310:
-                screen.blit(slime_surface, obstacle_rect)
+                screen.blit(slime_surf, obstacle_rect)
             else:
-                screen.blit(fly_surface, obstacle_rect)
+                screen.blit(fly_surf, obstacle_rect)
                 
 
         obstacle_list=[obstacle for obstacle in obstacle_list if obstacle.x>-10]
@@ -96,6 +124,19 @@ def calc_score(obstacle_list):
                 return 1
     return 0 
 
+def player_animation():
+    #play walking if on floor
+    #display jump when player not on floor
+    global player_surf,player_index
+    if player_rect.bottom<215:
+        player_surf=player_jump
+    else:
+        player_index+=0.35
+        if player_index>=len(player_walk):
+            player_index=0
+        player_surf=player_walk[int(player_index)]
+
+
 
 while running:
     for event in pygame.event.get():
@@ -115,12 +156,25 @@ while running:
                     game_active=True
 
         
+        if game_active and not game_pause:
+            if event.type==obstacle_timer:
+                if randint(0,2):
+                    obstacle_list.append(slime_surf.get_rect(midbottom=(randint(900,1100),310)))    
+                else:
+                    obstacle_list.append(fly_surf.get_rect(center=(randint(900,1100),150)))
+
+            if event.type==slime_animation_timer:
+                if slime_index==0: slime_index=1
+                else: slime_index=0
+                slime_surf=slime_frame[slime_index]
+            
+            if event.type==fly_animation_timer:
+                if fly_index==0: fly_index=1
+                else: fly_index=0
+                fly_surf=fly_frame[fly_index]
+            
+
         
-        if event.type==obstacle_timer and game_active and not game_pause:
-            if randint(0,2):
-                obstacle_list.append(slime_surface.get_rect(midbottom=(randint(900,1100),310)))    
-            else:
-                obstacle_list.append(fly_surface.get_rect(center=(randint(900,1100),150)))
                 
             
 
@@ -134,16 +188,13 @@ while running:
         if player_rect.y>=215:
             player_rect.y=215
 
-        if player_rect.y<215:
-            player_surface=pygame.image.load("C:\Projects\Python\Asteroid-Escape\Graphics\png\character\jump.png").convert_alpha()
-        else:
-            player_surface=pygame.image.load("C:\Projects\Python\Asteroid-Escape\Graphics\png\character\walk\walk0001.png").convert_alpha()
+        player_animation()
 
 
 
         screen.blit(background_surface, (0,0))
         screen.blit(ground_surface, ground_surface_rect)
-        screen.blit(player_surface, player_rect)
+        screen.blit(player_surf, player_rect)
         obstacle_list=obstacle_movement(obstacle_list)
 
         # if player_rect.left>=slime_rect.right :
