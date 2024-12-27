@@ -74,7 +74,6 @@ background_surface=pygame.transform.scale(background_surface,(640,400))
 text_font=pygame.font.Font("C:\Projects\Python\Asteroid-Escape\Fonts\joystix.otf", 60)
 score_font=pygame.font.Font("C:\Projects\Python\Asteroid-Escape\Fonts\joystix.otf", 20)
 
-
 ground_surface=pygame.image.load("C:\Projects\Python\Asteroid-Escape\Graphics\ground.jpg").convert_alpha()
 ground_surface=pygame.transform.scale(ground_surface,(640,132))
 ground_surface_rect=ground_surface.get_rect(midbottom=(320,440))
@@ -91,6 +90,19 @@ name_surface_rect=name_surface.get_rect(center=(320,115))
 
 restart_surface=name_font.render("Press SPACE to restart", False, (255,255,255))
 restart_surface_rect=restart_surface.get_rect(center=(320,330))
+
+#Audio
+jump_sound=pygame.mixer.Sound("C:\Projects\Python\Asteroid-Escape\Audio\Jump.wav")
+jump_sound.set_volume(0.1)
+
+death_sound=pygame.mixer.Sound("C:\Projects\Python\Asteroid-Escape\Audio\Retro_die_03.OGG")
+death_sound.set_volume(0.1)
+
+bg_sound=pygame.mixer.Sound("C:\Projects\Python\Asteroid-Escape\Audio\Bg_music_test1.mp3")
+bg_sound.set_volume(0.1)
+bg_sound.play(loops=-1)
+
+
 
 #Timer
 obstacle_timer=pygame.USEREVENT + 1
@@ -134,7 +146,7 @@ def obstacle_movement(obstacle_list):
     if obstacle_list:
         for obstacle_rect in obstacle_list:
             if not game_pause:
-                obstacle_rect.x-=4
+                obstacle_rect.x-=4.2
             if obstacle_rect.bottom==310:
                 screen.blit(slime_surf, obstacle_rect)
             else:
@@ -189,6 +201,7 @@ def check_collision(obstacle_list):
         for obstacle_rect in obstacle_list:
             if player_rect.colliderect(obstacle_rect):
                 obstacle_list=[]
+                death_sound.play()
                 return False,obstacle_list
     return True,obstacle_list
 
@@ -211,6 +224,7 @@ def player_animation():
         if player_index>=len(player_walk):
             player_index=0
         player_surf=player_walk[int(player_index)]
+        
 
 def save_high_score():
     with open('highScore.txt','w') as file:
@@ -227,6 +241,7 @@ while running:
             if game_active:
                 if event.key==pygame.K_SPACE and player_rect.y==215:
                     player_gravity=-20
+                    jump_sound.play()
                 elif event.key==pygame.K_p:
                     game_pause=not game_pause
                     print(f"Pause: {game_pause}")
