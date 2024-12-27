@@ -103,9 +103,43 @@ quit_surf_rect=quit_surf.get_rect(center=(320,270))
 coming_soon=title_font.render("Comming Soon", False, (255,255,255))
 coming_soon_rect=coming_soon.get_rect(center=(320,200))
 
+menu_player=pygame.image.load("C:\Projects\Python\Asteroid-Escape\Graphics\png\character\jump.png").convert_alpha()
+menu_player=pygame.transform.rotozoom(menu_player, 45, 1)
+menu_player_rect=menu_player.get_rect(center=(100,250))
+
+move_x=0
+move_y=0
+
 menu_sound=pygame.mixer.Sound("C:\Projects\Python\Asteroid-Escape\Audio\Menu.wav")
 menu_sound.set_volume(1)
 
+def menu_player_animation(move_x, move_y):
+    x_pos=menu_player_rect.x
+    y_pos=menu_player_rect.y
+
+    if x_pos==0:
+            move_x=1   #move to the right
+    elif x_pos==560:
+            move_x=0   #move to the left
+    
+    if y_pos==0:
+            move_y=1    #move down
+    elif y_pos==300:
+            move_y=0    #move up
+
+    if move_y:
+        menu_player_rect.y+=1
+    else:
+        menu_player_rect.y-=1
+    
+    if move_x:
+        menu_player_rect.x+=1
+    else:
+        menu_player_rect.x-=1
+    return move_x,move_y
+
+    
+    
 #Game Restart Surfaces
 player_end_surface=pygame.image.load("C:\Projects\Python\Asteroid-Escape\Graphics\png\character\Front.png").convert_alpha()
 player_end_surface=pygame.transform.rotozoom(player_end_surface,0,1.2)
@@ -117,6 +151,36 @@ name_surface_rect=name_surface.get_rect(center=(320,100))
 
 restart_surface=menu_font.render("Press SPACE to restart", False, (255,255,255))
 restart_surface_rect=restart_surface.get_rect(center=(320,310))
+
+
+
+#Confetti
+confetti_1=pygame.image.load("C:\Projects\Python\Asteroid-Escape\Graphics\Confetti1.png").convert_alpha()
+confetti_2=pygame.image.load("C:\Projects\Python\Asteroid-Escape\Graphics\Confetti2.png").convert_alpha()
+confetti_3=pygame.image.load("C:\Projects\Python\Asteroid-Escape\Graphics\Confetti3.png").convert_alpha()
+confetti_4=pygame.image.load("C:\Projects\Python\Asteroid-Escape\Graphics\Confetti4.png").convert_alpha()
+confetti_5=pygame.image.load("C:\Projects\Python\Asteroid-Escape\Graphics\Confetti5.png").convert_alpha()
+confetti_6=pygame.image.load("C:\Projects\Python\Asteroid-Escape\Graphics\Confetti6.png").convert_alpha()
+confetti_7=pygame.image.load("C:\Projects\Python\Asteroid-Escape\Graphics\Confetti7.png").convert_alpha()
+confetti_8=pygame.image.load("C:\Projects\Python\Asteroid-Escape\Graphics\Confetti8.png").convert_alpha()
+confetti_9=pygame.image.load("C:\Projects\Python\Asteroid-Escape\Graphics\Confetti9.png").convert_alpha()
+confetti_10=pygame.image.load("C:\Projects\Python\Asteroid-Escape\Graphics\Confetti10.png").convert_alpha()
+confetti_11=pygame.image.load("C:\Projects\Python\Asteroid-Escape\Graphics\Confetti11.png").convert_alpha()
+confetti_frame=[confetti_1, confetti_2, confetti_3, confetti_4,confetti_5,confetti_6,confetti_7, confetti_8, confetti_9,confetti_10,confetti_11]
+confetti_index=0
+confetti_surface=confetti_frame[confetti_index]
+confetti_surf_rect=confetti_surface.get_rect(center=(320,280))
+high_score_sound=pygame.mixer.Sound("C:\Projects\Python\Asteroid-Escape\Audio\High_score.mp3")
+
+
+def confetti_animation():
+    global confetti_index, confetti_surface, confetti_frame
+    if confetti_index>=len(confetti_frame)-1:
+        confetti_index=0
+
+    confetti_index+=0.1
+    confetti_surface=confetti_frame[int(confetti_index)]
+
 
 #Audio
 jump_sound=pygame.mixer.Sound("C:\Projects\Python\Asteroid-Escape\Audio\Jump.wav")
@@ -284,7 +348,7 @@ while running:
                 if randint(0,2):
                     obstacle_list.append(slime_surf.get_rect(midbottom=(randint(900,1100),310)))    
                 else:
-                    obstacle_list.append(fly_surf.get_rect(center=(randint(900,1100),150)))
+                    obstacle_list.append(fly_surf.get_rect(center=(randint(900,1100),randint(150,200))))
 
             if event.type==cloud_timer:
                 rand=randint(0,3)
@@ -313,6 +377,7 @@ while running:
                 else: fly_index=0
                 fly_surf=fly_frame[fly_index]
                 
+    
     #game_screen
     if game_state=="active":
 
@@ -342,12 +407,23 @@ while running:
     
     #Start Menu
     elif game_state=="menu":
+
+        fly_surf=pygame.transform.scale(fly_surf, (50,25))
+        fly_surf_rect=fly_surf.get_rect(center=(380,130))
+        slime_surf_rect=slime_surf.get_rect(center=(200,305))
+
         screen.blit(background_surface, (0,0))
+        screen.blit(slime_surf, slime_surf_rect)
+        screen.blit(fly_surf, fly_surf_rect)
+        screen.blit(menu_player, menu_player_rect)
         screen.blit(title_surf,title_surf_rect)
         screen.blit(start_surface, start_surf_rect)
         screen.blit(high_surf, high_surf_rect)
         screen.blit(settings_surf, settings_surf_rect)
         screen.blit(quit_surf, quit_surf_rect)
+
+
+        move_x,move_y=menu_player_animation(move_x, move_y)
 
         mouse_pos=pygame.mouse.get_pos()
         if start_surf_rect.collidepoint(mouse_pos):
@@ -387,16 +463,23 @@ while running:
     #end/restart screen
     elif game_state=="end":
         screen.fill("#467599")
-        save_high_score()
         screen.blit(name_surface, name_surface_rect)
         screen.blit(restart_surface, restart_surface_rect)
         screen.blit(player_end_surface, player_end_rect)
+        if(count>=high_score):
+            name_surface=name_font.render("New High Score",False, "#9ED8DB")
+            name_surface_rect=name_surface.get_rect(center=(320,100))
+            screen.blit(confetti_surface,confetti_surf_rect)
+            confetti_animation()
         text_surface=score_font.render(f'Score {count}', False, (255,255,255))
         text_rect=text_surface.get_rect(center=(530,30))
         high_score_surf=score_font.render(f'HI {high_score}', False, (255,255,255))
         high_score_rect=high_score_surf.get_rect(center=(100,30))
         screen.blit(high_score_surf, high_score_rect)
         screen.blit(text_surface, text_rect)
+        save_high_score()
+
+   
 
         
     pygame.display.update()
