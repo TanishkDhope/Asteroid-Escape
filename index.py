@@ -79,17 +79,44 @@ ground_surface=pygame.transform.scale(ground_surface,(640,132))
 ground_surface_rect=ground_surface.get_rect(midbottom=(320,440))
 
 
+
+
+#Menu Surfaces
+menu_font=pygame.font.Font("C:\Projects\Python\Asteroid-Escape\Fonts\joystix.otf", 20)
+title_font=pygame.font.Font("C:\Projects\Python\Asteroid-Escape\Fonts\debug.otf", 70)
+
+title_surf=title_font.render("Asteroid Escape", False, (255,255,255))
+title_surf_rect=title_surf.get_rect(center=(320,80))
+
+start_surface=menu_font.render("Start Game", False, (255,255,255))
+start_surf_rect=start_surface.get_rect(center=(320,150))
+
+high_surf=menu_font.render("High Scores", False, (255,255,255))
+high_surf_rect=high_surf.get_rect(center=(320,190))
+
+settings_surf=menu_font.render("Settings", False, (255,255,255))
+settings_surf_rect=settings_surf.get_rect(center=(320,230))
+
+quit_surf=menu_font.render("Quit", False, (255,255,255))
+quit_surf_rect=quit_surf.get_rect(center=(320,270))
+
+coming_soon=title_font.render("Comming Soon", False, (255,255,255))
+coming_soon_rect=coming_soon.get_rect(center=(320,200))
+
+menu_sound=pygame.mixer.Sound("C:\Projects\Python\Asteroid-Escape\Audio\Menu.wav")
+menu_sound.set_volume(1)
+
 #Game Restart Surfaces
 player_end_surface=pygame.image.load("C:\Projects\Python\Asteroid-Escape\Graphics\png\character\Front.png").convert_alpha()
 player_end_surface=pygame.transform.rotozoom(player_end_surface,0,1.2)
 player_end_rect=player_end_surface.get_rect(center=(320,200))
 
-name_font=pygame.font.Font("C:\Projects\Python\Asteroid-Escape\Fonts\joystix.otf", 20)
+name_font=pygame.font.Font("C:\Projects\Python\Asteroid-Escape\Fonts\debug.otf", 50)
 name_surface=name_font.render("Asteroid Escape",False, "#9ED8DB")
-name_surface_rect=name_surface.get_rect(center=(320,115))
+name_surface_rect=name_surface.get_rect(center=(320,100))
 
-restart_surface=name_font.render("Press SPACE to restart", False, (255,255,255))
-restart_surface_rect=restart_surface.get_rect(center=(320,330))
+restart_surface=menu_font.render("Press SPACE to restart", False, (255,255,255))
+restart_surface_rect=restart_surface.get_rect(center=(320,310))
 
 #Audio
 jump_sound=pygame.mixer.Sound("C:\Projects\Python\Asteroid-Escape\Audio\Jump.wav")
@@ -121,7 +148,7 @@ grass_timer=pygame.USEREVENT + 5
 pygame.time.set_timer(grass_timer, 2500)
 
 running=True
-game_active=True
+game_state="menu"
 game_pause=False
 alternate=True
 
@@ -202,14 +229,14 @@ def check_collision(obstacle_list):
             if player_rect.colliderect(obstacle_rect):
                 obstacle_list=[]
                 death_sound.play()
-                return False,obstacle_list
-    return True,obstacle_list
+                return "end",obstacle_list
+    return "active",obstacle_list
 
 
 def calc_score(obstacle_list):
     if obstacle_list:
         for obstacle in obstacle_list:
-            if player_rect.left>obstacle.x and game_active and not game_pause:
+            if player_rect.left>obstacle.x and game_state=="active" and not game_pause:
                 return 1
     return 0 
 
@@ -238,7 +265,7 @@ while running:
             running=False
       
         if event.type==pygame.KEYDOWN:
-            if game_active:
+            if game_state=="active":
                 if event.key==pygame.K_SPACE and player_rect.y==215:
                     player_gravity=-20
                     jump_sound.play()
@@ -248,10 +275,11 @@ while running:
             else:
                 if event.key==pygame.K_SPACE:
                     count=0
-                    game_active=True
+                    game_state="active"
+                elif event.key==pygame.K_ESCAPE:
+                    game_state="menu"
 
-        
-        if game_active and not game_pause:
+        if game_state=="active" and not game_pause:
             if event.type==obstacle_timer:
                 if randint(0,2):
                     obstacle_list.append(slime_surf.get_rect(midbottom=(randint(900,1100),310)))    
@@ -285,7 +313,8 @@ while running:
                 else: fly_index=0
                 fly_surf=fly_frame[fly_index]
                 
-    if game_active:
+    #game_screen
+    if game_state=="active":
 
         player_gravity+=1
         player_rect.y+=player_gravity
@@ -307,12 +336,56 @@ while running:
   
         count+=calc_score(obstacle_list)
 
-        game_active,obstacle_list=check_collision(obstacle_list)
+        game_state,obstacle_list=check_collision(obstacle_list)
         display_score()
         display_high()
+    
+    #Start Menu
+    elif game_state=="menu":
+        screen.blit(background_surface, (0,0))
+        screen.blit(title_surf,title_surf_rect)
+        screen.blit(start_surface, start_surf_rect)
+        screen.blit(high_surf, high_surf_rect)
+        screen.blit(settings_surf, settings_surf_rect)
+        screen.blit(quit_surf, quit_surf_rect)
+
+        mouse_pos=pygame.mouse.get_pos()
+        if start_surf_rect.collidepoint(mouse_pos):
+            pygame.mouse.set_cursor(pygame.cursors.diamond)
+            if pygame.mouse.get_pressed()[0]:   
+                game_state="active"
+                menu_sound.play()
+        elif quit_surf_rect.collidepoint(mouse_pos):
+            pygame.mouse.set_cursor(pygame.cursors.diamond)
+            if pygame.mouse.get_pressed()[0]:  
+                running=False
+                
+        elif high_surf_rect.collidepoint(mouse_pos):
+            pygame.mouse.set_cursor(pygame.cursors.diamond)
+            if pygame.mouse.get_pressed()[0]:  
+                menu_sound.play() 
+                game_state="high"
+        elif settings_surf_rect.collidepoint(mouse_pos):
+            pygame.mouse.set_cursor(pygame.cursors.diamond)
+            if pygame.mouse.get_pressed()[0]:  
+                menu_sound.play() 
+                game_state="setting"
+        else:
+            pygame.mouse.set_cursor(pygame.cursors.arrow)
 
 
-    else:
+    #High Score screen
+    elif game_state=="high":
+        screen.fill("grey")
+        screen.blit(coming_soon, coming_soon_rect)
+
+
+    elif game_state=="setting":
+        screen.fill("grey")
+        screen.blit(coming_soon, coming_soon_rect)
+
+    #end/restart screen
+    elif game_state=="end":
         screen.fill("#467599")
         save_high_score()
         screen.blit(name_surface, name_surface_rect)
